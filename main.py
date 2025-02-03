@@ -1,414 +1,460 @@
-# version 0.5.1
-
 import sys
-import os
+import os, stat
 import shutil
 
-# Словарь для функции man по командам
-man_dict = {"man": "Чтобы подробнее узнать о команде, напишите : man name_of_function",
 
-"help": """Выводит инструкцию по приложению
-Использование: help""",
+man_dict = {"man": "To now more about the command, write: man name_of_function",
 
-"start": """Начало работы с файлом
-Использование: start group year month""",
+"help": """Show the instruction and list of commands.
+Using: help""",
 
-"end": """Конец работы с файлом
-Работает, если было использована команда start
-Использование: end""",
+"start": """Open the file.
+Using: start group year month""",
 
-"add": """Добавить новый элемент в файл
-Работает, если до этого была использована команда start
-Использование: add sum reason comment""",
+"end": """Close the opened file.
+Works only if you open the file
+Using: end""",
 
-"close": """Закрывает программу
-Использование: close""",
+"add": """Add new element in file.
+Works only if you open the file
+Using: add sum category comment""",
 
-"show": """Отображает элементы файла, если не указано число, отображает последний. Если написать all, покажет все.
-Использование: show num""",
+"close": """Close programm.
+Using: close""",
 
-"rmlast": """Удаляет последний жлемент в файле.
-Использование: rmlast""",
+"show": """Show last element. If an argument is num show last num elements.
+If an argument is word show all elements with this category.
+If an argument is 'all' show all elements.
+Using: 'show num', 'show category', 'show all', 'show'""",
 
-"count": """Считает общее изменение денег в файле.
-Использование: count""",
+"rmlast": """Delete last element in file.
+Using: rmlast""",
 
-"stats": """Считает все доходы и расходы по категориям.
-Использование: stats category  Если category не указан, то выведет все""",
+"count": """Count income/expenses in file.
+Using: count""",
 
-"rmdir": """Удаляет папку вместе с содержимым.
-Использование: rmdir path""",
+"stats": """Count income/expenses by categories.
+Using: 'stats category'  If category is empty show all categories""",
 
-"rmf": """Удаляет файл.
-Использование: rmf path""",
+"rmdir": """Remove directory.
+Using: rmdir path""",
 
-"sts": """Показывает текущий статус работы.
-Использование: sts""",
+"rmf": """remove file.
+Using: rmf path""",
 
-"list": """Выводит содержимое директории.
-Использование: list path""",
+"sts": """Show oppened file.
+Using: sts""",
 
-"clear": """Очищает консоль, отоброжает приложение, в котором вы работаете.
-Использование: clear""",
+"list": """Show list of dirs and files.
+Using: list path""",
 
-"version": """Отображает версию приложения.
-Использование: version""",
+"clear": """Clear console.
+Using: clear""",
+
+"version": """Show version of programm.
+Using: version""",
  
 }
 
+
+def make_clear(line): # Форматирует полученную команду в кортеж
+    line = line.lower().split()
+    return tuple(line)
+
+
+def version(): # Show version of a programm
+    print("FinancePro version 1.0")
+
+
 def hlp(): # Выводит список всех команд
-    print("Поддерживаемые команды:\n", '\n'.join(sorted([
-    "help        -- вывод инструкции",
-    "start       -- начало работы",
-    "add        -- добавить элемент",
-    "end         -- конец работы",
-    "man         -- мануал по команде",
-    "show        -- отображает последние записи в файлах",
-    "rmlast      -- удаляет последние элементы файла",
-    "count       -- считает сумму всех расходов и доходов в файле",
-    "stats       -- отображает расходы и доходы по группам",
-    "rmdir       -- удаляет папку",
-    "rmf         -- удаляет файл",
-    "sts         -- отображает статус работы",
-    "close       -- закончить работу программы",
-    "list        -- отображает файлы и директории",
-    "clear       -- очищает консоль",
-    "version     -- отображает версию приложения"])).strip(), '\n')
+    print("Supported Commands:\n", '\n'.join(sorted([
+    "help        -- an instruction output",
+    "start       -- open the file for work",
+    "add         -- add an element in file",
+    "end         -- close the file",
+    "man         -- a manual for command",
+    "show        -- show last strings in file",
+    "rmlast      -- remove the last string in file",
+    "count       -- calculates the sum of all expenses and income in the file",
+    "stats       -- displays expenses and income by groups",
+    "rmdir       -- remove a directory",
+    "rmf         -- remove a file",
+    "sts         -- show status of work",
+    "close       -- close the programm",
+    "list        -- show directories and files",
+    "clear       -- clear console",
+    "version     -- show a version of the programm"])).strip(), sep="")
     
     
-def man(name = "man"): # Выводит гайд по команде
-    if name in man_dict:
-        print(man_dict[name], '\n')
-    else:
-        print("Такой команды не существует. Воспользуйтесь командой instruction, чтобы увидеть список команд")
-        
-
-def version():
-    print("FinancePro version 0.5.1")
-
-
 def close(): # Выход из программы
-    ans = input("Вы уверены, что хотите выйти? [Y/N]\n").upper()
+    ans = input("Are you sure that you want to exit? [Y/N]\n").upper()
     if ans == "Y":
-        print("Спасибо за пользование нашим приложением! Ждем вас снова!")
+        print("Thanks for using FinancePro!")
         sys.exit()
     else:
-        print("Выход отменен")
-        
-        
-def ls(line):
-    if len(line.split()) < 2:
-        for i in sorted(os.listdir("files")):
-            print(i)
-    elif len(line.split()) > 2:
-        print("Syntax Error. Use man list")
-    else:
-        if line.split()[1].startswith(".."):
-            print("У вас нет прав доступа!")
-            return 0
-        try:
-            for i in sorted(os.listdir(f'files/{line.split()[1]}')):
-                print(i)
-        except FileNotFoundError:
-            print("Такой папки не существует")
-        except WindowsError:
-            print("Ошибка!")
-        
-        
-def add(inp, work_file): # Добавить строку в файл
-    add_line = inp.split()
-                
-    if len(add_line) < 3: # Проверка на правильный синтаксис
-        print("Syntax Error. Use man add\n")
-                    
-    else:
-        num = add_line[1]
-                
-        for index in range(len(num)): # Проверяем введена ли сумма
-                        
-            if index == 0 and num[index] not in "-0123456789":
-                        print("Syntax Error. Use man add\n")
-                        break
-                        
-            elif index > 0 and num[index] not in "0123456789":
-                print("Syntax Error. Use man add\n")
-                break
-                        
-        else:
-            add_line[2].upper()
-            work_file.write(" ".join(add_line[1:])) # Записываем в файл
-            work_file.write('\n')
-            
-            
-def show(inp, work_file): # Отобразить содержимое файла
-    show = inp.split()
-                
-    if len(show) > 2: # Проверка на синтаксис
-        print("Syntax Error. Use man show")
-                    
-    elif len(show) == 2: # Если есть второй элемент
-                    
-        if show[1] == "all": # Если all
-            work_file.seek(0)
-            file_show = work_file.readlines()
-                        
-            if len(file_show) > 0: # Проверка на длину
-                for i in file_show:
-                    print(i, end='')
-                                
-        else: # Если второй элемент число или другое слово
-            for char in show[1]: # Проверка на число
-                if char not in "0123456789": 
-                    break
-                            
-            else: # Выводим содержимое
-                work_file.seek(0)
-                file_show = work_file.readlines()
-                            
-                if len(file_show) > 0: # Проверка на длину
-                                
-                    if len(file_show) <= int(show[1]): # Если длина меньше или равна требуемой
-                        for i in file_show:
-                            print(i, end='')
-                                
-                    else: # Если длина больше
-                        for i in file_show[-int(show[1]):]:
-                            print(i, end="")
-                
-                return 0
-                            
-            work_file.seek(0)
-            file_show = work_file.readlines()
-            counter = 0
-            for line in file_show:
-                if line.split()[1].lower() == inp.split()[1].lower():
-                    print(line, end='')
-                    counter += 1
-            else:
-                if counter == 0:
-                    print(f"Нет информации по запросу '{inp.split()[1]}'")
-                                        
-    else: # Если только одно слово
-        work_file.seek(0)
-        file_show = work_file.readlines()
-        if len(file_show) > 0:
-            print(file_show[-1], end='')
-    
-                               
-        
-def count(work_file): # Считает общую сумму в файле
-    work_file.seek(0)
-    file_show = work_file.readlines()
-    main_sum = 0
-    plus_sum = 0
-    minus_sum = 0
-    for line in file_show:
-        line = line.split()
-        num = int(line[0])
-        main_sum += num
-        minus_sum += num if num <= 0 else 0
-        plus_sum += num if num > 0 else 0
-    print(f"\nОбщий доход: {plus_sum}")
-    print(f"Общий расход: {minus_sum}")
-    print(f"Итоговая сумма: {main_sum}\n")
-   
-    
-def stats(inp, work_file): # Ститает сумму по одноименным групам
-    if len(inp.split()) > 2: # Проверка на синтаксис
-        print("Syntax Error. Use man stats")
-        return 0
-    
-    elif len(inp.split()) == 1: # Если не введен желаемый класс
-        a = "all"
-        
-    else:
-        a = inp.split()[1] # Сохраняем желаемый класс
-    
-    work_file.seek(0)    
-    file_show = work_file.readlines()
-    sums = dict() # Словарь значений
-    
-    for line in file_show: # Считаем значения для каждого класса
-        line = line.split()
-        sums[line[1]] = sums.get(line[1], 0) + int(line[0])
-        
-    if a == "all": # Отображаеи все
-        print('\n')
-        for key in sums:
-            print(f"{key}: {sums[key]}")
-        print('\n')
-            
-    else: # Отображаем желаемый
-        if a in sums:
-            print(f"{a}: {sums[a]}")
-        else:
-            print("Информация не найдена")
-    
-        
-def start(group, year, month):
-    cls_flag = False
-    try:
-        os.makedirs(f"files/{group}/{year}")
-    except FileExistsError:
-        pass
-    
-    work_file = open(f"files/{group}/{year}/{month.upper()}{year}.txt", "a+", encoding="utf-8")
-        
-    while True:
-        print(">>>", end="")
-        inp = " ".join(input().split())
-            
-        if inp == "end": # end
-            print("Файл успешно сохранен\n")
-            break
-            
-        elif inp == "close": # close
-            cls_flag = True
-            print("Файл успешно сохранен")
-            break
-            
-        elif inp.startswith("man ") or inp == 'man': # man
-            man(inp.split()[1]) if len(inp.split()) > 1 else man()
-                
-        elif inp.startswith("start"): # start
-            print("Снаяала закройте текущий файл, чтобы открыть другой!\n")
-                
-        elif inp == "help": # help
-            hlp()
-                
-        elif inp.startswith("rmf") or inp.startswith("rmdir"): # rmdir and rmf
-            print("Снаяала закройте файл!\n")
-            
-        elif inp == 'version':
-            version()
-        
-        elif inp == "sts": #sts
-            print(f"Вы работаете с файлом {group}/{year}/{month.upper()}{year}.txt")
-                
-        elif inp.startswith("add ") or inp == 'add': # add sum reason comment
-            add(inp, work_file)
-            
-        elif inp.startswith("show ") or inp == 'show': # show
-            show(inp, work_file=work_file)
-                            
-        elif inp == "rmlast": # rmlast
-            work_file.seek(0)
-            file_show = work_file.readlines() # Считываем все строки
-                
-            if len(file_show) > 0: # Если строк больше 0, улаляем последнюю, иначе ничего не делаем
-                file_show.pop()
-                work_file.close()
-                    
-                work_file = open(f"files/{group}/{year}/{month.upper()}{year}.txt", "w", encoding="utf-8") # Перезаписываем файл целиком
-                if len(file_show) > 0:
-                    for i in range(len(file_show)):
-                        work_file.write(file_show[i])
-            work_file.close()
-            work_file = open(f"files/{group}/{year}/{month.upper()}{year}.txt", "a+", encoding="utf-8")
-        
-        elif inp == "count": # count
-            count(work_file=work_file)
-            
-        elif inp.startswith("stats ") or inp == 'stats': # stats
-            stats(inp, work_file=work_file)
-            
-        elif inp == "clear":
-            clear()
-            print(f"На данный момент открыт файл {group}/{year}/{month.upper()}{year}.txt")
-            
-        elif inp.startswith('list ') or inp == 'list': # list
-            ls(inp)
-            
-        elif inp == "":
-            pass    
-            
-        else:
-            print("Function is not found")
-                            
-    work_file.close()                            
-    if cls_flag:
-        close()
-            
+        print("Stop exiting.")
 
+
+def man(name = "man"): # Выводит гайд по команде
+    if name in man_dict:
+        print(man_dict[name])
+    else:
+        print("Command doesn't exist! Use 'help' to see commands.")
+        
+        
 def clear():
     os.system('cls' if os.name == 'nt' else 'clear')
-    print('Вы работаете в "FinancePro"')
+    print('You work with "FinancePro".')
+    print("Use 'help' to see commands.")
     
+    
+def ls(path):
+    if ".." in path:
+        print("You don't have access rights!")
+        return
+    try:
+        for i in sorted(os.listdir(path)):
+            print(i)
+    except FileNotFoundError:
+        print("The directory doesn't exist!")
+    except WindowsError:
+        print("Error!")
+        
+        
+def rmf(path):
+    if ".." in path:
+        print("You don't have access rights!")
+        return
+    check = input("Are you sure? Data will be disappear [Y/N]\n").upper()
+    if check != "Y":
+        print("Stop deleting!")
+        return
+    try:
+        os.remove(path)
+        print("The file was deleted!")
+    except FileNotFoundError:
+        print("The file is not founded!")
+
+
+def remove_readonly(func, path, exc_info):
+        "Clear the readonly bit and reattempt the removal"
+        # ERROR_ACCESS_DENIED = 5
+        if func not in (os.unlink, os.rmdir) or exc_info[1].winerror != 5:
+            raise exc_info[1]
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+
+
+def rmdir(path):
+    if ".." in path:
+        print("You don't have access rights!")
+        return
+    check = input("Are you sure? Data will be disappear [Y/N]\n").upper()
+    if check == "Y":
+        shutil.rmtree(path, onerror=remove_readonly)
+        print("Directory was deleted!") 
+    else:    
+        print("Stop deleting!")    
+
+
+def show(filename, num = 1):
+    filename.seek(0)
+    lines = filename.readlines()
+    length = len(lines)
+    if length == 0:
+        print("File is empty")
+        return
+    if num == "all" or int(num) >= length:
+        for i in lines:
+            print(i, end="")
+    else:
+        for i in lines[- int(num):]:
+            print(i, end="")
+            
+            
+def show_pattern(filename, pattern):
+    filename.seek(0)
+    lines = filename.readlines()
+    if len(lines) == 0:
+        print("File is empty")
+        return
+    counter = 0
+    for i in lines:
+        if pattern == i.split()[1]:
+            print(i, end="")
+            counter += 1
+    else:
+        if counter == 0:
+            print("No such lines")
+            
+
+def rmlast(file, file_name):
+    file.seek(0)
+    lines = file.readlines()
+    length = len(lines)
+    if length == 0:
+        print("File is empty")
+    else:
+        file.close()
+        with open(file_name, "w", encoding="utf-8") as file:
+            length -= 1
+            if length != 0:
+                for i in lines[:-1]:
+                    file.write(i)
+        
+        file = open(file_name, "a+", encoding="utf-8")
+        return file
+
+
+def count(file):
+    file.seek(0)
+    lines = file.readlines()
+    length = len(lines)
+    if length == 0:
+        print("File is empty")
+        return
+    summary = 0
+    for i in lines:
+        num = float(i.split()[0])
+        summary += num
+    print(f"Income/Expenses: {summary}")
+
+
+def stats(file, pattern = None):
+    file.seek(0)
+    lines = file.readlines()
+    if len(lines) == 0:
+        print("File is empty")
+        return
+    
+    if pattern is None:
+        stats_dict = dict()
+        for i in lines:
+            key = i.split()[1]
+            num = float(i.split()[0])
+            stats_dict[key] = stats_dict.get(key, 0) + num
+        for key in sorted(stats_dict):
+            print(f"{key}: {stats_dict[key]}")
+            
+    else:
+        pattern = pattern.lower()
+        summary = 0
+        for i in lines:
+            if i.split()[1] == pattern:
+                num = float(i.split()[0])
+                summary += num
+        print(f"{pattern}: {summary}")
+
+
+def start(path):
+    file_name = path
+    dir_name = os.path.dirname(file_name)
+    
+    os.makedirs(dir_name, exist_ok=True)
+    
+    file =  open(file_name, "a+", encoding="utf-8")
+    
+    while True:
+        line = make_clear(str(input(">>>")))
+        
+        length = len(line)
+        if length == 0:
+            continue
+    
+        first_word = line[0]
+            
+        match first_word:
+                
+            case "help":
+                hlp()
+                    
+            case "man":
+                if length == 1:
+                    man()
+                elif length == 2:
+                    man(line[1])
+                else:
+                    print("Bad Syntax! Use pattern:'man name_command'!")
+
+            case "sts":
+                print(f"Open file '{file_name.lstrip('data/')}'")
+                    
+            case "clear":
+                clear()
+                print(f"Open file '{file_name.lstrip('data/')}'")
+                    
+            case "list":
+                if length == 1:
+                    ls("data")
+                elif length == 2:
+                    ls(f"data/{line[1]}")
+                else:
+                    print("Bad Syntax! Use 'man' to know, how to use command!")
+                    
+            case "version":
+                if length == 1:
+                    version()
+                else:
+                    print("Bad Syntax! Use 'man' to know, how to use command!")
+                        
+            case "rmf" | "rmdir":
+                print("Close file to do this!")
+                    
+            case "start":
+                print("Close openned file before!")
+                    
+            case "end":
+                print("File was succesfully saved and closed!")
+                file.close()
+                break
+                
+            case "close":
+                file.close()
+                print("File was succesfully saved and closed!")
+                close()
+                break
+                
+            case "add":
+                if length >= 2 and line[0]:
+                    line_list = list(line)
+                    line_list[2] = line_list[2].lower()
+                    try:
+                        float(line_list[1])
+                    except ValueError:
+                        print("Wrong sum!")
+                        continue
+                    file.write(" ".join(line_list[1:]))
+                    file.write("\n")
+                else:
+                    print("Bad Syntax! Use 'man' to know, how to use command!")
+                        
+            case "show":
+                if length == 1:
+                    show(file)
+                elif length == 2 and (line[1].isdigit() or line[1] == "all"):
+                    show(file, line[1])
+                elif length == 2:
+                    show_pattern(file, line[1])
+                else:
+                    print("Bad Syntax! Use 'man' to know, how to use command!")
+                        
+            case "rmlast":
+                if length == 1:
+                    file = rmlast(file, file_name)
+                else:
+                    print("Bad Syntax! Use 'man' to know, how to use command!")
+                        
+            case "count":
+                count(file)
+                
+            case "stats":
+                if length == 1:
+                    stats(file)
+                elif length == 2:
+                    stats(file, pattern=line[1])
+                else:
+                    print("Bad Syntax! Use 'man' to know, how to use command!")
+                    
+            case _:
+                print("Commant doesn't exist!")
+                    
+        
+    file.close()    
+                            
 
 def main():
-    print('Добро пожаловать в "FinancePro"')
-    print("Воспользуйтесь командой help, чтобы увидеть список команд")
+    
     try:
-        os.makedirs('files')
+        os.makedirs('data')
     except FileExistsError:
         pass
+    
     while True:
-        print(">>>", end="")
-        line = " ".join(input().split())
+        line = make_clear(str(input(">>>")))
         
-        if line == "close": # close
-            close()
-            
-        elif line.startswith("man ") or line == 'man': # man
-            man(line.split()[1]) if len(line.split()) > 1 else man()
-            
-        elif line == "help": # help
-            hlp()
-            
-        elif line == 'version':
-            version()
-            
-        elif line == "sts": # sts
-            print("Ни один файл пока не открыт")
-            
-        elif (line == "end" or line == "add" or line == "show" or line == "rmlast" or line == "count" or line == "stats"
-              or line.startswith('add ') or line.startswith('show ') or line.startswith('stats ')):
-            print("Вы не работаете ни с одним файлом!") # end, add, show, rmlast, count, stats
-            
-        elif line.startswith("rmdir ") or line == "rmdir": # rmdir
-            if len(line.split()) != 2:
-                print("Syntax Error. Use man rmdir")
-            else:
-                if line.split()[1].startswith('..'):
-                        print("У вас нет прав доступа!")
-                else:
-                    print("Вы уверены, что хотите удалить папку? Все содержимое будет потеряно [Y/N]")
-                    if input().lower() == 'y':
-                        shutil.rmtree(f"files/{line.split()[1]}", ignore_errors=True)  
-            
-        elif line.startswith("rmf ") or line == 'rmf': # rmf
-            if len(line.split()) != 2:
-                print("Syntax Error. Use man rmf")
-            else:
-                if line.split()[1].startswith(".."):
-                    print("У вас нет прав доступа!")
-                else:
-                    try:
-                        os.remove(f"files/{line.split()[1]}")
-                    except FileNotFoundError:
-                        print("File not found!")
-                
-        elif line.startswith("start ") or line == 'start': # start
-            words = line.split()
-            if len(words) != 4:
-                print("Syntax Error. Use man start")
-            else:
-                start(words[1], words[2], words[3])
-                
+        length = len(line)
+        if length == 0:
+            continue
         
-        elif line.startswith('list ') or line == "list":
-            ls(line)
+        first_word = line[0]
+        
+        match first_word:
             
-        elif line == "clear":
-            clear()
-            print("Вы не работаете ни с одним файлом в данный момент.")
-            
-        elif line == "":
-            pass
+            case "help":
+                hlp() if length == 1 else print("Bad Syntax! Use 'man' to know, how to use command!")
                 
-        else:
-            print("Function is not found")
-    
-    
+            case "man":
+                if length == 1:
+                    man()
+                elif length == 2:
+                    man(line[1])
+                else:
+                    print("Bad Syntax! Use pattern:'man name_command'!")
+                    
+            case "end" | "add" | "show" | "rmlast" | "count" | "stats":
+                print("You don't work with any file now. Use 'start' to start work")
+                
+            case "sts":
+                print("No open files right now.")
+                
+            case "close":
+                close()
+                
+            case "clear":
+                clear()
+                print("No open files right now.")
+                
+            case "list":
+                if length == 1:
+                    ls("data")
+                elif length == 2:
+                    ls(f"data/{line[1]}")
+                else:
+                    print("Bad Syntax! Use 'man' to know, how to use command!")
+                    
+            case "version":
+                if length == 1:
+                    version()
+                else:
+                    print("Bad Syntax! Use 'man' to know, how to use command!")
+                    
+            case "rmf":
+                if length == 2:
+                    rmf(f"data/{line[1]}")
+                else:
+                    print("Bad Syntax! Use 'man' to know, how to use command!")
+            
+            case "rmdir":
+                if length == 2:
+                    rmdir(f"data/{line[1]}")
+                else:
+                    print("Bad Syntax! Use 'man' to know, how to use command!")
+                    
+            case "start":
+                if length != 4:
+                    print("Bad Syntax! Use 'man' to know, how to use command!")
+                    continue
+                group = line[1]
+                
+                year = line[2]
+                if not year.isdigit() or len(year) != 4:
+                    print("Wrong year error!")
+                    continue
+                
+                month = line[3].upper()
+                if month not in ("JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"):
+                    print("Bad month error!")
+                    continue
+                
+                path = f"data/{group}/{year}/{group}_{month}_{year}.txt"
+                start(path)
+                
+                    
+            case _:
+                print("Commant doesn't exist!")
+                        
+                
 if __name__ == "__main__":
+    print('Welcome to "FinancePro".')
+    print("Use 'help' to see commands.")
     main()
