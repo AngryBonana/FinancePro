@@ -1,4 +1,4 @@
-# FinancePrp
+# FinancePro
 
 It's a simple TUI to manage your finance and count your expences and incomes
 
